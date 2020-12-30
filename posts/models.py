@@ -17,4 +17,4 @@ class Post(models.Model):
     text = models.TextField()
     pub_date = models.DateTimeField("date published", auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, blank=True, null=True, on_delete=False)
+    group = models.ForeignKey(Group, blank=True, null=True, on_delete=models.PROTECT)
