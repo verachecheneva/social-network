@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% username %}{% endblock %}
+{% block title %}{{ author.username }}{% endblock %}
 {% block header %}Страница пользователя{% endblock %}
 {% block content %}
 <main role="main" class="container">
@@ -11,8 +11,7 @@
                                         {{ author.get_full_name }}
                                     </div>
                                     <div class="h3 text-muted">
-                                         {% username %}
-                                         @leo
+                                         @{{ author.username }}
                                     </div>
                             </div>
                             <ul class="list-group list-group-flush">
@@ -25,7 +24,7 @@
                                     <li class="list-group-item">
                                             <div class="h6 text-muted">
                                                 <!-- Количество записей -->
-                                                Записей: {% num %}
+                                                Записей: {{ num }}
                                             </div>
                                     </li>
                             </ul>
@@ -40,17 +39,17 @@
                             <div class="card-body">
                                     <p class="card-text">
                                             <!-- Ссылка на страницу автора в атрибуте href; username автора в тексте ссылки -->
-                                            <a href="/{% username %}/"><strong class="d-block text-gray-dark">@{% username %}</strong></a>
+                                            <a href="/{{ author.username }}/"><strong class="d-block text-gray-dark">@{{ author.username }}</strong></a>
                                             <!-- Текст поста -->
                                             {{ post.text|linebreaksbr }}
                                     </p>
                                     <div class="d-flex justify-content-between align-items-center">
                                             <div class="btn-group ">
                                                     <!-- Ссылка на страницу записи в атрибуте href-->
-                                                    <a class="btn btn-sm text-muted" href="/{% username %}/{{ post.post_id }}/" role="button">Добавить комментарий</a>
+                                                    <a class="btn btn-sm text-muted" href="/{{ author.username }}/{{ post.post_id }}/" role="button">Добавить комментарий</a>
                                                     <!-- Ссылка на редактирование, показывается только автору записи -->
-                                                {% if user.is_authenticated and user.username == {% username %} %}
-                                                    <a class="btn btn-sm text-muted" href="/{% username %}/{{ post.post_id }}/edit" role="button">Редактировать</a>
+                                                {% if user.is_authenticated and user.username == {{ author.username }} %}
+                                                    <a class="btn btn-sm text-muted" href="/{% author.username %}/{{ post.post_id }}/edit" role="button">Редактировать</a>
                                                 {% endif %}
                                             </div>
 
