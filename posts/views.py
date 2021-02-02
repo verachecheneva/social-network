@@ -43,7 +43,7 @@ User = get_user_model()
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    posts_list = Post.objects.filter(username=username).order_by("-pub_date")
+    posts_list = Post.objects.filter(author=author).order_by("-pub_date")
     num = posts_list.count()
     paginator = Paginator(posts_list, 10)
     page_number = request.GET.get("page")
@@ -53,9 +53,9 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     author = get_object_or_404(User, username=username)
-    posts_list = Post.objects.filter(username=username).order_by("-pub_date")
+    posts_list = Post.objects.filter(author=author).order_by("-pub_date")
     num = posts_list.count()
-    post = Post.objacts.filter(username=username).filter(post_id=post_id)
+    post = Post.objacts.filter(author=author).filter(post_id=post_id)
     return render(request, "post.html", {"post_id": post_id, "num": num, "post": post,
                                          "author": author})
 
@@ -65,7 +65,8 @@ def post_edit(request, username, post_id):
     if username != request.User.username:
         return redirect("post_view", username, post_id)
     else:
-        post = Post.objects.filter(username=username).filter(post_id=post_id)
+        author = get_object_or_404(User, username=username)
+        post = Post.objects.filter(author=author).filter(post_id=post_id)
         if request.method == "POST":
             form = PostForm(request.POST)
             form.group = post.group
