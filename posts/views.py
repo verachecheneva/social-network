@@ -55,27 +55,25 @@ def post_view(request, username, post_id):
     author = get_object_or_404(User, username=username)
     posts_list = Post.objects.filter(author=author).order_by("-pub_date")
     num = posts_list.count()
-    post = Post.objacts.filter(author=author).filter(post_id=post_id)
+    post = Post.objects.filter(author=author).get(id=post_id)
     return render(request, "post.html", {"post_id": post_id, "num": num, "post": post,
                                          "author": author})
 
 
 @login_required()
 def post_edit(request, username, post_id):
-    if username != request.User.username:
-        return redirect("post_view", username, post_id)
+    if username != request.user.username:
+        return redirect(post_view, username, post_id)
     else:
         author = get_object_or_404(User, username=username)
-        post = Post.objects.filter(author=author).filter(post_id=post_id)
+        post = Post.objects.filter(author=author).get(id=post_id)
         if request.method == "POST":
-            form = PostForm(request.POST)
-            form.group = post.group
-            form.text = post.text
+            form = PostForm(request.POST, instance=post)
             if form.is_valid():
                 post = form.save(commit=False)
                 post.author = request.user
                 post.save()
-                return redirect("index")
+                return redirect(post_view, username, post_id)
             return render(request, "new_post.html", {"form": form, "post": post})
-        form = PostForm()
+        form = PostForm(instance=post)
         return render(request, "new_post.html", {"form": form, "post": post})
