@@ -11,7 +11,7 @@ class StaticURLTests(TestCase):
         cls.user = User.objects.create_user(username="Vera")
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.user)
-        cls.group = Group.objects.create(title="TestGroup", slug="TestGroup",description="Group description")
+        cls.group = Group.objects.create(title="TestGroup", slug="TestGroup", description="Group description")
         Post.objects.create(text="This is text", author=cls.user, group=cls.group)
         cls.post = Post.objects.get(text="This is text")
         cls.user_1 = User.objects.create_user(username="Alina")
