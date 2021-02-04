@@ -3,7 +3,6 @@ import tempfile
 
 from django.test import Client, TestCase
 from django.urls import reverse
-from django import forms
 
 from posts.models import Post, Group, User
 from posts.forms import PostForm
@@ -36,6 +35,20 @@ class StaticURLTests(TestCase):
             "text": "Это новый пост",
             "group": self.group.id
         }
-        response = self.authorized_client.post(reverse("new_post"), form=form_data, follow=True)
-        self.assertRedirects(response, "/index/")
+        response = self.authorized_client.post(reverse("new_post"), data=form_data, follow=True)
+        self.assertRedirects(response, "/")
         self.assertEqual(Post.objects.count(), post_count+1)
+
+    """Тест на изменение записи в БД при редактировании поста"""
+    def test_edit_post(self):
+        post_count = Post.objects.count()
+        form_data = {
+            "text": "Пост изменен",
+            "group": self.group.id
+        }
+        response = self.authorized_client.post(reverse("post_edit", kwargs={"username": "Vera", "post_id": 1}),
+                                               data=form_data, follow=True)
+        post = Post.objects.filter(author=self.user).get(id=1).text
+        self.assertRedirects(response, "/Vera/1/")
+        self.assertEqual(Post.objects.count(), post_count)
+        self.assertEqual(post, "Пост изменен")
