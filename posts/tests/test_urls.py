@@ -67,3 +67,15 @@ class StaticURLTests(TestCase):
             with self.subTest():
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
+
+
+class HandlerOfMistakes(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.guest_client = Client()
+
+    """возвращает ли сервер код 404, если страница не найдена"""
+    def test_PageNotFound(self):
+        response = self.guest_client.get("/zxcvbnm/")
+        self.assertEqual(response.status_code, 404)

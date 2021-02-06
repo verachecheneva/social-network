@@ -9,7 +9,7 @@
             <div class="card-header">{% if post %}Редактировать запись{% else %}Добавить запись{% endif %}</div>
             <div class="card-body">
 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     {% for field in form %}

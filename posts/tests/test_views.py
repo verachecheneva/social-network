@@ -1,6 +1,11 @@
+import shutil
+import tempfile
+
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
 
 from posts.models import Post, Group, User
 
@@ -9,6 +14,7 @@ class StaticURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.guest_client = Client()
         cls.user = User.objects.create_user(username="Vera")
         cls.authorized_client = Client()
@@ -19,6 +25,12 @@ class StaticURLTests(TestCase):
         cls.user_1 = User.objects.create_user(username="Alina")
         cls.other_client = Client()
         cls.other_client.force_login(cls.user_1)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        # Рекурсивно удаляем временную после завершения тестов
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     """Тестируем шаблон, получаемый при обращении к view-функции через name"""
     def test_index_page_uses_correct_template(self):
@@ -97,3 +109,51 @@ class StaticURLTests(TestCase):
         response = self.guest_client.get(reverse("index"))
         count = len(response.context.get("page"))
         self.assertEqual(count, 10)
+
+
+class ImageInPost(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+        cls.guest_client = Client()
+        cls.user = User.objects.create_user(username="Vera")
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
+        cls.small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b')
+        cls.group = Group.objects.create(title="TestGroup", slug="TestGroup", description="Group description")
+        Post.objects.create(text="This is text", author=cls.user, group=cls.group,
+                            image=SimpleUploadedFile(name='small.gif', content=cls.small_gif, content_type='image/gif'))
+        cls.post = Post.objects.get(text="This is text")
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        # Рекурсивно удаляем временную после завершения тестов
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+    """Проверю что картинка передается на страницу просмотра поста"""
+    def test_post_page_show_image(self):
+        response = self.guest_client.get(reverse("post", kwargs={"username": "Vera", "post_id": 1}))
+        self.assertEqual(response.context.get("page")[0].image, self.post.image)
+
+    """Проверю что картинка передается на главную страницу, страницу профайла и группы"""
+    def test_index_page_show_image(self):
+        response = self.guest_client.get(reverse("index"))
+        task_image = response.context.get("page")[0].image
+        self.assertEqual(task_image, self.post.image)
+
+    def test_group_page_show_image(self):
+        response = self.guest_client.get(reverse("group", kwargs={"slug": self.group.slug}))
+        task_image = response.context.get("page")[0].image
+        self.assertEqual(task_image, self.post.image)
+
+    def test_profile_page_show_image(self):
+        response = self.guest_client.get(reverse("profile", kwargs={"username": "Vera"}))
+        task_image = response.context.get("page")[0].image
+        self.assertEqual(task_image, self.post.image)

@@ -3,10 +3,10 @@ import tempfile
 
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.conf import settings
 
 from posts.models import Post, Group, User
 from posts.forms import PostForm
-from myback import settings
 
 
 class StaticURLTests(TestCase):

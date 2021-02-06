@@ -26,8 +26,9 @@ SECRET_KEY = '8#=xuoo)3yu=j6l3%=13#79%h)tr0chsuv0gqb-1=52q#2mfjk'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "testserver",
+    '127.0.0.1',
+    'testserver',
+    '*',
 ]
 
 
@@ -43,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'sorl.thumbnail',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'myback.urls'
@@ -127,8 +131,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "index"
