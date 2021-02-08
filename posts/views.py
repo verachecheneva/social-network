@@ -98,7 +98,7 @@ def add_comment(request, username, post_id):
             comment.save()
             return redirect(post_view, username=username, post_id=post_id)
     form = CommentForm()
-    return redirect(post_view, username=username, post_id=post_id)
+    return redirect(add_comment, username=username, post_id=post_id, form=form)
 
 
 @login_required
