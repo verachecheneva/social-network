@@ -6,11 +6,13 @@ from django.urls import reverse
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
+from django.core.cache import cache
 
-from posts.models import Post, Group, User
+from posts.models import Post, Group, User, Follow
+from posts.forms import PostForm
 
 
-class StaticURLTests(TestCase):
+class StaticViewTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -25,6 +27,9 @@ class StaticURLTests(TestCase):
         cls.user_1 = User.objects.create_user(username="Alina")
         cls.other_client = Client()
         cls.other_client.force_login(cls.user_1)
+
+    def setUp(self):
+        cache.clear()
 
     @classmethod
     def tearDownClass(cls):
@@ -131,16 +136,19 @@ class ImageInPost(TestCase):
                             image=SimpleUploadedFile(name='small.gif', content=cls.small_gif, content_type='image/gif'))
         cls.post = Post.objects.get(text="This is text")
 
+    def setUp(self):
+        cache.clear()
+
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         # Рекурсивно удаляем временную после завершения тестов
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     """Проверю что картинка передается на страницу просмотра поста"""
     def test_post_page_show_image(self):
         response = self.guest_client.get(reverse("post", kwargs={"username": "Vera", "post_id": 1}))
-        self.assertEqual(response.context.get("page")[0].image, self.post.image)
+        self.assertEqual(response.context.get("post").image, self.post.image)
 
     """Проверю что картинка передается на главную страницу, страницу профайла и группы"""
     def test_index_page_show_image(self):
@@ -157,3 +165,58 @@ class ImageInPost(TestCase):
         response = self.guest_client.get(reverse("profile", kwargs={"username": "Vera"}))
         task_image = response.context.get("page")[0].image
         self.assertEqual(task_image, self.post.image)
+
+
+class TestCache(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.guest_client = Client()
+        cls.guest_client.get(reverse("index"))
+        cls.user = User.objects.create_user(username="Vera")
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
+        Post.objects.create(text="This is text", author=cls.user)
+        cls.post = Post.objects.get(text="This is text")
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+    """Тестируем работу кэша"""
+    def test_cache(self):
+        response = self.client.get(reverse("index"))
+        self.assertNotContains(response, "This is text", msg_prefix="пост найден, а не должен")
+        cache.clear()
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, "This is text")
+
+
+class TestFollowPage(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Vera = Client()
+        cls.Alina = Client()
+        cls.Katya = Client()
+        cls.user_vera = User.objects.create_user(username="Vera")
+        cls.user_alina = User.objects.create_user(username="Alina")
+        cls.user_katya = User.objects.create_user(username="Katya")
+        cls.Vera.force_login(cls.user_vera)
+        cls.Alina.force_login(cls.user_alina)
+        cls.Katya.force_login(cls.user_katya)
+        Post.objects.create(text="This is text", author=cls.user_vera)
+        cls.post = Post.objects.get(text="This is text")
+        Follow.objects.create(user=cls.user_alina, author=cls.user_vera)
+        cls.follow = Follow.objects.get(user=cls.user_alina, author=cls.user_vera)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+    """Новая запись пользователя появляется только в ленте тех, кто на него подписан"""
+    def test_follow_page(self):
+        response_1 = self.Katya.get(reverse("follow_index"))
+        response_2 = self.Alina.get(reverse("follow_index"))
+        self.assertNotContains(response_1, "This is text")
+        self.assertContains(response_2, "This is text")

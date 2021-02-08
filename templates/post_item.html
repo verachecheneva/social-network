@@ -1,17 +1,18 @@
+
 <div class="card mb-3 mt-1 shadow-sm">
 
   <!-- Отображение картинки -->
   {% load thumbnail %}
-    {% if post.image %}
-      {{ thumbnail post.image "960x339" crop="center" upscale=True as im }}
-    {% endif %}
+
+      {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+
   <img class="card-img" src="{{ im.url }}" />
   {% endthumbnail %}
   <!-- Отображение текста поста -->
   <div class="card-body">
     <p class="card-text">
       <!-- Ссылка на автора через @ -->
-      <a name="post_{{ post.id }}" href="{% url 'profile' post.author.username %}">
+      <a name="profile" href="{% url 'profile' post.author.username %}">
         <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
       </a>
       {{ post.text|linebreaksbr }}

@@ -1,4 +1,5 @@
 from django.test import Client, TestCase
+from django.core.cache import cache
 
 from posts.models import Post, Group, User
 
@@ -57,6 +58,7 @@ class StaticURLTests(TestCase):
 
         """Тесты на ожидаемые шаблоны"""
     def test_urls_uses_correct_templates(self):
+        cache.clear()
         templates_url_names = {
             "index.html": "/",
             "group.html": "/group/TestGroup/",
