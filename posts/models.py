@@ -41,4 +41,4 @@ class Follow(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="following")
 
     def __str__(self):
-        return self.author.username
+        return f"{self.user.username} - {self.author.username}"

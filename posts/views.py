@@ -41,8 +41,6 @@ def new_post(request):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    num_1 = Follow.objects.filter(author=author).count()
-    num_2 = Follow.objects.filter(user=author).count()
     posts_list = Post.objects.filter(author=author).order_by("-pub_date")
     paginator = Paginator(posts_list, 10)
     page_number = request.GET.get("page")
@@ -51,10 +49,9 @@ def profile(request, username):
     user = request.user
     for follower in following:
         if follower.user == user:
-            return render(request, "profile.html", {"page": page, "author": author, "following": following,
-                                                    "num_1": num_1, "num_2": num_2}, content_type="text/html")
-    return render(request, "profile.html", {"page": page, "author": author, "num_1": num_1, "num_2": num_2},
-                  content_type="text/html")
+            return render(request, "profile.html", {"page": page, "author": author, "following": following},
+                          content_type="text/html")
+    return render(request, "profile.html", {"page": page, "author": author}, content_type="text/html")
 
 
 def post_view(request, username, post_id):
@@ -87,13 +84,13 @@ def post_edit(request, username, post_id):
 
 @login_required
 def add_comment(request, username, post_id):
+    post_author = get_object_or_404(User, username=username)
+    post = get_object_or_404(Post, author=post_author, id=post_id)
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.author = request.user
-            post_author = get_object_or_404(User, username=username)
-            post = get_object_or_404(Post, author=post_author, id=post_id)
             comment.post = post
             comment.save()
             return redirect(post_view, username=username, post_id=post_id)
@@ -103,16 +100,7 @@ def add_comment(request, username, post_id):
 
 @login_required
 def follow_index(request):
-    user = request.user
-    following = Follow.objects.filter(user=user)
-    following_authors = []
-    for item in following:
-        following_authors.append(item.author)
-    post_list = []
-    posts = Post.objects.order_by("-pub_date")
-    for post in posts:
-        if post.author in following_authors:
-            post_list.append(post)
+    post_list = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
@@ -125,8 +113,8 @@ def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     if user == author:
         return redirect(profile, username=username)
-    obj = Follow.objects.filter(user=user, author=author)
-    if len(obj) != 0:
+    following_exist = Follow.objects.filter(user=user, author=author).exists()
+    if following_exist:
         return redirect(profile, username=username)
     Follow.objects.create(user=user, author=author)
     return redirect(profile, username=username)
